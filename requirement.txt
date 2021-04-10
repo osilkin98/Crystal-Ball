@@ -1,0 +1,10 @@
+discord
+nanoleafapi
+spotipy
+openai
+
+
+# for spotify api
+requests>=2.25.0
+spotipy
+

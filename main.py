@@ -9,7 +9,7 @@ from discord.ext import commands
 
 
 def config_load():
-    with open('data/config.json', 'r', encoding='utf-8') as doc:
+    with open('data/config.json', 'r', encoding='utf-8-sig') as doc:
         #  Please make sure encoding is correct, especially after editing the config file
         return json.load(doc)
 
