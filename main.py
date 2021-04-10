@@ -7,6 +7,8 @@ from pathlib import Path
 import discord
 from discord.ext import commands
 
+import nanoleafapi
+
 
 def config_load():
     with open('data/config.json', 'r', encoding='utf-8-sig') as doc:
@@ -22,9 +24,11 @@ async def run():
 
     config = config_load()
     bot = Bot(config=config,
-              description=config['description'])
+              description=config['discord']['description'],
+              nanopanels=config['nanopanels']
+              )
     try:
-        await bot.start(config['token'])
+        await bot.start(config['discord']['token'])
     except KeyboardInterrupt:
         await bot.logout()
 
@@ -37,6 +41,8 @@ class Bot(commands.Bot):
         )
         self.start_time = None
         self.app_info = None
+        self.nano_config = kwargs.pop('nanopanels') 
+
 
         self.loop.create_task(self.track_start())
         self.loop.create_task(self.load_all_extensions())
@@ -97,6 +103,7 @@ class Bot(commands.Bot):
         if message.author.bot:
             return  # ignore all bots
         await self.process_commands(message)
+
 
 
 if __name__ == '__main__':
