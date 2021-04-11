@@ -26,11 +26,12 @@ class Sample(commands.Cog):
         print(f'Joined {guild.name} with {guild.member_count} users!')
 
     @commands.command()
-    async def test(self, ctx):
+    async def stop(self, ctx):
         """
-        A test command, Mainly used to show how commands and cogs should be laid out.
+        Kills the current server
         """
-        await ctx.send('Tested!')
+        await ctx.send('Bye!', delete_after=10)
+        exit()
 
     @commands.group(invoke_without_command=True)
     async def foo(self, ctx: Context):
@@ -49,32 +50,97 @@ class Sample(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def nano(self, ctx: Context):
-        # print(type(ctx))
-        await ctx.send('Nanopanels command')
+        await ctx.send('Nanopanels command', delete_after=20)
     
     @nano.command()
-    async def toggle(self, ctx: Context):
+    async def on(self, ctx: Context):
         """
-        Toggles nanopanels on/off
+        Turns the nanopanels on if they are off, otherwise does nothing
         """
-        self.nanopanels.toggle_power()    
-        status = "panels turned on" if self.nanopanels.get_power() else "panels turned off" 
-        await ctx.send(status, delete_after=20)
+        if not self.nanopanels.get_power():
+            self.nanopanels.toggle_power()
+
+        await ctx.send('Nanopanels on', delete_after=20) 
+
+    @nano.command()
+    async def off(self, ctx: Context):
+        """
+        Turns the nanopanels off if they are on
+        """
+        if self.nanopanels.get_power():
+            self.nanopanels.toggle_power()
+        
+        await ctx.send('Nanopanels off', delete_after=20)
+
+    @nano.command()
+    async def brightness(self, ctx: Context):
+        """
+        Set the nanopanels brightness, value must be between 0 and 100
+        """
+        args = ctx.message.content.split(' ')
+        if len(args) < 3:
+            await ctx.send('Error: must have a `brightness` value', delete_after=10)
+
+        brightness = int(args[2])
+        duration = abs(int(args[3])) if len(args) >= 4 else 0
+
+        if 0 <= brightness <= 100:
+            self.nanopanels.set_brightness(
+                brightness=brightness, 
+                duration=duration
+            )
+            await ctx.send(f'Set brightness to {brightness}', delete_after=10)
+        else:
+            await ctx.send('Invalid values', delete_after=10)
 
     @nano.command()
     async def effects(self, ctx: Context):
         """
         Displays available scenes
         """
-        await ctx.send(f'```json\n{json.dumps(self.nanopanels.get_info()["effects"], indent=2)}```')
+        msg = ''
+        for i, effect in enumerate(self.nanopanels.list_effects()):
+            msg += f'{i+1}. {effect}\n'
+        
+        await ctx.send(f'```md\n{msg}```',delete_after=60)
     
 
     @nano.command()
-    async def set_effect(self, ctx: Context):
-        print('test etststseterwersrse')
-        print('hi')
-        await ctx.send('hello')
-        
+    async def effect(self, ctx: Context):
+        """
+        Sets the provided effect
+        """
+        _, _, element_no = ctx.message.content.split(' ')
+        element_no = int(element_no)
+        effects = self.nanopanels.list_effects()
+
+        # check for out of bounds
+        if element_no > len(effects):
+            return
+
+        selected = effects[element_no - 1]
+        if self.nanopanels.set_effect(selected):
+            await ctx.send(f'Set effect `{selected}`', delete_after=20)
+        else:
+            await ctx.send(f'Error setting effect `{selected}`', delete_after=10) 
+
+
+    @nano.command()
+    async def info(self, ctx: Context):
+        """
+        Prints out information about the nanopanels in a readable format
+        """
+        # info to print: brightness, on/off state, current effect
+        info = self.nanopanels.get_info()
+        brightness = info['state']['brightness']['value']
+        state = 'on' if info['state']['on']['value'] else 'off'
+        effect = info['effects']['select']
+        print(json.dumps(self.nanopanels.get_info(), indent=4))
+
+
+        message = f'effect: `{effect}`\nbrightness: `{brightness}`\nstate: `{state}`'
+        await ctx.send(message, delete_after=20)        
+
 
 
 
